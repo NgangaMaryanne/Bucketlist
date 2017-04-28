@@ -142,7 +142,68 @@ class UserLogin(Resource):
             return make_response(jsonify(response))
         #add edge cases for wrong email or wrong password.
 
+class UserStatus(Resource):
+    def get(self):
+        auth_header = request.headers.get('Authorization')
+        if auth_header:
+            auth_token = auth_header.split(" ")[1]
+        else:
+            auth_token = ''
+        if auth_token:
+            resp = User.decode_auth_token(auth_token)
+            if not isinstance(resp, str):
+                user = User.query.filter_by(id=resp).first()
+                response = {'status':'success',
+                            'data':{'id':user.id,
+                                     'email':user.email,
+                                     'is_admin':user.is_admin
+                                }
+                            }
+                return make_response(jsonify(response))
+            response = {'status':'fail',
+                        'message':resp
+                        }
+        else:
+            response={'status':'fail',
+                        'message':'provide valid token'
+                    }
+            return make_response(jsonify(response))
+
+class UserLogout(Resource):
+    def post(self):
+        auth_header = request.headers.get('Authorization')
+        if auth_header:
+            auth_token = auth_header.split(" ")[1]
+        else:
+            auth_token = ''
+        if auth_token:
+            resp = User.decode_auth_token(auth_token)
+            if not isinstance(resp, str):
+                blacklist_token = BlacklistToken(token=auth_token)
+                try:
+                    db.session.add(blacklist_token)
+                    db.session.commit()
+                    response = {'status':'success',
+                                'message':'Successfully logged out.'
+                        }
+                    return make_response(jsonify(response))
+                except(Exception):
+                    response = {'status':'Fail',
+                                'message':Exception
+                                }
+                    return make_response(jsonify(response))
+            response = {'status':'fail',
+                        'message':resp
+                        }
+            return make_response(jsonify(response))
+        else:
+            response = {'status':'Success',
+                        'message':'Provide a valid auth token'
+                        }
+            return make_response(jsonify(response))
 
 api.add_resource(UserRegistration, '/auth/register')
 api.add_resource(UserLogin, '/auth/login')
-api.add_resource(GetUpdateDeleteUser, '/admin/changeuser/<int:id>.json')
+api.add_resource(UserStatus, '/auth/status')
+api.add_resource(UserLogout,'/auth/logout')
+# api.add_resource(GetUpdateDeleteUser, '/admin/changeuser/<int:id>.json')

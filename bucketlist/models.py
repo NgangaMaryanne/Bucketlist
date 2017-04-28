@@ -13,7 +13,7 @@ class User(UserMixin, db.Model):
     creates users table.
     '''
     __tablename__ = 'users'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     email = db.Column(db.String(60), index=True, unique=True)
     username = db.Column(db.String(60), index=True, unique=True)
     first_name = db.Column(db.String(60), index=True)
@@ -23,14 +23,14 @@ class User(UserMixin, db.Model):
     bucketlists = db.relationship('Bucketlist', backref=db.backref(
         'bucketlists', uselist=True, cascade='delete,all'))
 
-    def __init__(self, email, username, first_name, last_name, password, is_admin=False, bucketlists=[]):
+    def __init__(self, email, username, first_name, last_name, password, is_admin=False):
         self.email = email
         self.username = username
         self.first_name = first_name
         self.last_name = last_name
         self.password = password
         self.is_admin = is_admin
-        self.bucketlists = bucketlists
+        self.bucketlists = []
 
     @property
     def password(self):
@@ -76,7 +76,11 @@ class User(UserMixin, db.Model):
     def decode_auth_token(auth_token):
         try:
             payload = jwt.decode(auth_token, app.config.get('SECRET_KEY'))
-            return payload['sub']
+            is_blacklisted_token = BlacklistToken.check_blacklisted_token(auth_token)
+            if is_blacklisted_token:
+                return 'Token is blacklisted. Please log in again.'
+            else:
+                return payload['sub']
         except(jwt.ExpiredSignatureError):
             return "Signature expired. Please log in again."
         except(jwt.InvalidTokenError):
@@ -103,6 +107,27 @@ class UserSchema(Schema):
     class Meta:
         type_= 'users'
 
+#model for blacklist tokens 
+class BlacklistToken(db.Model):
+    __tablename__ = 'blacklist_tokens'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    token = db.Column(db.String(500), unique=True, nullable=False)
+    blacklisted_on = db.Column(db.DateTime, nullable=False)
+
+    def __init__(self, token):
+        self.token = token
+        self.blacklisted_on = datetime.datetime.utcnow()
+
+    @staticmethod
+    def check_blacklisted_token(auth_token):
+        response = BlacklistToken.query.filter_by(token=str(auth_token)).first()
+        if response:
+            return True
+        else:
+            return False
+
+    def __repr__(self):
+        return '<id: token: {0}'.format(self.token)
 
 @login_manager.user_loader
 def load_user(user_id):
