@@ -1,4 +1,5 @@
 import jwt
+import os
 import datetime
 from flask_login import UserMixin
 from marshmallow_jsonapi import Schema, fields
@@ -64,48 +65,17 @@ class User(UserMixin, db.Model):
     def encode_auth_token(self, user_id):
         try:
             payload = {
-            'exp':datetime.datetime.utcnow()+datetime.timedelta(days=0, seconds=5),
+            'exp':datetime.datetime.utcnow()+datetime.timedelta(days=1),
             'iat':datetime.datetime.utcnow(),
             'sub':user_id
             }
-            return jwt.encode(payload, app.config.get('SECRET_KEY'), algorithm='HS256')
+            return jwt.encode(payload, os.getenv('SECRET_KEY'), algorithm='HS256')
         except(Exception):
             return Exception
 
-    @staticmethod
-    def decode_auth_token(auth_token):
-        try:
-            payload = jwt.decode(auth_token, app.config.get('SECRET_KEY'))
-            is_blacklisted_token = BlacklistToken.check_blacklisted_token(auth_token)
-            if is_blacklisted_token:
-                return 'Token is blacklisted. Please log in again.'
-            else:
-                return payload['sub']
-        except(jwt.ExpiredSignatureError):
-            return "Signature expired. Please log in again."
-        except(jwt.InvalidTokenError):
-            return "Invalid token. Please log in again."
+    
 
-
-class UserSchema(Schema):
-    not_blank = validate.Length(min=1, error="Field cannot be blank")
-    id = fields.Integer(dump_only=True)
-    email = fields.String(validate=not_blank)
-    username = fields.String(validate=not_blank)
-    first_name = fields.String()
-    last_name = fields.String()
-    password_hash = fields.String(validate=not_blank)
-    is_admin = fields.Boolean()
-    bucketlists = fields.Relationship()
-
-    def get_top_level_links(self, data, many):
-        if many:
-            self_link = "/users/"
-        else:
-            self_link = "/users/{}".format(data['id'])
-        return {'self': self_link}
-    class Meta:
-        type_= 'users'
+    
 
 #model for blacklist tokens 
 class BlacklistToken(db.Model):
@@ -129,9 +99,9 @@ class BlacklistToken(db.Model):
     def __repr__(self):
         return '<id: token: {0}'.format(self.token)
 
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
+# @login_manager.user_loader
+# def load_user(user_id):
+#     return User.query.get(int(user_id))
 
 
 class Bucketlist(db.Model):
@@ -146,6 +116,13 @@ class Bucketlist(db.Model):
     def __repr__(self):
         return '<Bucketlist: {}>' .format(self.name)
 
+    def __init__(self, name, created_by):
+        self.name = name
+        self.created_by = created_by
+        self.date_created = datetime.datetime.utcnow()
+        self.date_modified = datetime.datetime.utcnow()
+
+
 
 class Item(db.Model):
     __tablename__ = 'items'
@@ -158,3 +135,10 @@ class Item(db.Model):
 
     def __repr__(self):
         return '<Item: {}>' .format(self.name)
+
+    def __init__(self, name, bucketlist_id):
+        self.name = name
+        self.date_created = datetime.datetime.utcnow()
+        self.date_modified = datetime.datetime.utcnow()
+        self.done = False
+        self.bucketlist_id = bucketlist_id
