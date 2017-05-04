@@ -26,6 +26,10 @@ def authentication_required(f):
             response ={'message':'Please login to access this resource.'}
             return make_response(jsonify(response))
         this_user_id = User.decode_auth_token(auth_token)
+        if type(this_user_id) !=int:
+            response ={'status':'fail',
+                        'error':this_user_id}
+            return make_response(jsonify(response))
         g.user=this_user_id
         return f(*args, **kwargs)
     return decorated_function
@@ -66,8 +70,7 @@ class BucketlistApi(Resource):
                 next_page = "{}api/v1/bucketlists?page={}&limit={}".format(request.url_root, page_number+1 , limit)
             else:
                 next_page = None
-            buckets = buckets.items
-            results = bucketlist_schema.dump(buckets, many=True)
+            results = bucketlist_schema.dump(buckets.items, many=True)
             response = {'previous page': previous_page,
                         'next page': next_page,
                         'results':results}
