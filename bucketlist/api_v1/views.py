@@ -48,9 +48,30 @@ class BucketlistApi(Resource):
                 response = {'message':'You do not have bucket with id {}. Please try again'.format(bucket_id)}
                 return make_response(jsonify(response))
         else:
-            buckets = Bucketlist.query.filter_by(created_by=g.user)
+            if request.args.get('page'):
+                page_number = int(request.args.get('page'))
+            else:
+                page_number = 1
+            if request.args.get('limit'):
+                limit = int(request.args.get('limit'))
+            else:
+                limit = 2
+
+            buckets = Bucketlist.query.filter_by(created_by=g.user).paginate(page_number, limit, False)
+            if buckets.has_prev:
+                previous_page = "{}api/v1/bucketlists?page={}&limit={}".format(request.url_root, page_number-1, limit )
+            else:
+                previous_page = None
+            if buckets.has_next:
+                next_page = "{}api/v1/bucketlists?page={}&limit={}".format(request.url_root, page_number+1 , limit)
+            else:
+                next_page = None
+            buckets = buckets.items
             results = bucketlist_schema.dump(buckets, many=True)
-            return results
+            response = {'previous page': previous_page,
+                        'next page': next_page,
+                        'results':results}
+            return make_response(jsonify(response))
 
 
     @authentication_required
@@ -243,7 +264,7 @@ class BucketlistItems(Resource):
                         }
             return make_response(jsonify(response))
 
-api.add_resource(BucketlistApi, '/api/v1/bucketlists','/api/v1/bucketlists/<int:bucket_id>/' )
+api.add_resource(BucketlistApi, '/api/v1/bucketlists/','/api/v1/bucketlists/<int:bucket_id>' )
 api.add_resource(BucketlistItems, '/api/v1/bucketlists/<int:bucket_id>/items', 
                  '/api/v1/bucketlists/<int:bucket_id>/items/<int:item_id>/')
 
