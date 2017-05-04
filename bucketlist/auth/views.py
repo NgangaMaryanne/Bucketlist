@@ -1,44 +1,60 @@
-from flask import Flask, request, jsonify, make_response, g
+import re
+from flask import request, jsonify, make_response
 from flask_restful import Resource, Api, reqparse
 from sqlalchemy.exc import SQLAlchemyError
-from marshmallow import ValidationError
-import json
-import os
-import re
 
 from .import auth
-from ..models import User
+from ..models import User, BlacklistToken
 from ..serializer import UserSchema
 from .. import db
 
 schema = UserSchema(strict=True)
 api = Api(auth)
+# custom error messages
+exception_error_response = {
+    'status': 'failed',
+    'message': Exception
+}
+sqlalchemy_error_response = {
+    'error': SQLAlchemyError,
+    'message': 'Database error. try again.'
+}
+wrong_method_error = {'message': 'User registration is a post method.'}
+
 
 class UserRegistration(Resource):
+    '''
+    API endpoint for user registration.
+    '''
+
     def post(self):
         parser = reqparse.RequestParser()
-        parser.add_argument('email', required=True, help='email is required')
-        parser.add_argument('username', required=True, help='Username is required')
+        parser.add_argument('email', type=Email,
+                            required=True, help='email is required')
+        parser.add_argument('username', required=True,
+                            help='Username is required')
         parser.add_argument('first_name')
         parser.add_argument('last_name')
         parser.add_argument('password')
         user_data = parser.parse_args(strict=True)
         if user_data:
-            #check that email is entered correctly.
+            # check that email is entered correctly.
             if not re.match(r"[^@]+@[^@]+\.[^@]+", user_data['email']):
-                response = {'message':'invalid email. Please try again'}
+                response = {'message': 'invalid email. Please try again'}
                 return make_response(jsonify(response))
-            #password has to be more than 8 characters.    
-            if len(user_data['password'])<8:
-                response = {'message':'Password too short. Please try again'}
+            # password has to be more than 8 characters.
+            if len(user_data['password']) < 8:
+                response = {'message': 'Password too short. Please try again'}
                 return make_response(jsonify(response))
-                #check that username is unique
-            user_usrname = user = User.query.filter_by(username=user_data['username']).first()
+                # check that username is unique
+            user_usrname = user = User.query.filter_by(
+                username=user_data['username']).first()
             if user_usrname:
-                response = {'message':'Username already exists. Please try again'}
+                response = {
+                    'message': 'Username already exists. Please try again'}
                 return make_response(jsonify(response))
             user = User.query.filter_by(email=user_data['email']).first()
-            #check that username does not exist too
+            # check that username does not exist too
             if not user:
                 try:
                     user = User(
@@ -46,52 +62,57 @@ class UserRegistration(Resource):
                         username=user_data['username'],
                         first_name=user_data['first_name'],
                         last_name=user_data['last_name'],
-                        password=user_data['password'] 
+                        password=user_data['password']
                     )
                     db.session.add(user)
                     db.session.commit()
                     response = {
-                        'status':'success',
-                        'message':'Successfully registered'
+                        'status': 'success',
+                        'message': 'Successfully registered'
                     }
-                    return make_response(jsonify(response))
+
+                    response = jsonify(response)
+                    response.status_code = 201
+                    return make_response(response)
                 except(Exception):
-                    response = {
-                        'status':'failed',
-                        'message':Exception
-                    }
-                    return make_response(jsonify(response))
+                    response = jsonify(exception_error_response)
+                    response.status_code = 400
+                    return make_response(response)
                 except(SQLAlchemyError):
                     db.session.rollback()
-                    response={
-                        'error':SQLAlchemyError,
-                        'message':'Database error. try again.'
-                    }
-                    return make_response(jsonify(response))
+                    response = jsonify(sqlalchemy_error_response)
+                    response.status_code = 400
+                    return make_response(response)
             else:
                 response = {
-                    'status':'fail',
-                    'message':'User exists. please log in.'
+                    'status': 'fail',
+                    'message': 'User exists. please log in.'
                 }
-                return make_response(jsonify(response))
+                response = jsonify(response)
+                response.status_code = 400
+                return make_response(response)
         else:
             response = {
-                'status':'fail',
-                'message':'Please input details.'
+                'status': 'fail',
+                'message': 'Please input details.'
             }
             return make_response(jsonify(response))
 
     def get(self):
-        response = {'message':'User registration is a post method.'}
-        return make_response(jsonify(response))
+        return make_response(jsonify(wrong_method_error))
+
     def put(self):
-        response = {'message':'User registration is a post method.'}
-        return make_response(jsonify(response))
+        return make_response(jsonify(wrong_method_error))
+
     def delete(self):
-        response = {'message':'User registration is a post method.'}
-        return make_response(jsonify(response))
+        return make_response(jsonify(wrong_method_error))
+
 
 class UserLogin(Resource):
+    '''
+    API endpoint for user login
+    '''
+
     def post(self):
         parser = reqparse.RequestParser()
         parser.add_argument("email", "Please enter your Email to login")
@@ -99,62 +120,44 @@ class UserLogin(Resource):
         user_details = parser.parse_args(strict=True)
         if user_details:
             try:
-                user=User.query.filter_by(email=user_details['email']).first()
-                # auth_token = user.encode_auth_token(user.id)
+                user = User.query.filter_by(
+                    email=user_details['email']).first()
                 if user and user.verify_password(user_details['password']):
                     auth_token = user.encode_auth_token(user.id)
                     if auth_token:
-                        #set global
-                        response = {'status':'success',
-                                    'message':'Successfully logged in.',
-                                    'auth_token':auth_token.decode()}
-                        return make_response(jsonify(response))
+                        response = {'status': 'success',
+                                    'message': 'Successfully logged in.',
+                                    'auth_token': auth_token.decode()}
+                        response = jsonify(response)
+                        response.status_code = 200
+                        return make_response(response)
                 else:
-                    response={'status':'fail',
-                              'message':'User does not exist.'}
-                    return make_response(jsonify(response))
+                    response = {'status': 'fail',
+                                'message': 'User does not exist.'}
+                    response = jsonify(response)
+                    response.status_code = 400
+                    return make_response(response)
             except(Exception):
-                response = {'status':'fail',
-                            'message':'Login failed please try again.',
-                            'error':str(Exception)}
-                return make_response(jsonify(response))
+                response = jsonify(exception_error_response)
+                response.status_code = 400
+                return make_response(response)
         else:
-            response = {'status':'fail',
-                        'message':'Please input details.'}
-        #add edge cases for wrong email or wrong password.
+            response = {'status': 'fail',
+                        'message': 'Please input details.'}
+            response = jsonify(response)
+            response.status_code = 400
+            return make_response(response)
 
-class UserStatus(Resource):
-    def get(self):
-        auth_header = request.headers.get('Authorization')
-        if auth_header:
-            auth_token = auth_header.split(" ")[1]
-        else:
-            auth_token = ''
-        if auth_token:
-            resp = User.decode_auth_token(auth_token)
-            if not isinstance(resp, str):
-                user = User.query.filter_by(id=resp).first()
-                response = {'status':'success',
-                            'data':{'id':user.id,
-                                     'email':user.email,
-                                     'is_admin':user.is_admin
-                                }
-                            }
-                return make_response(jsonify(response))
-            response = {'status':'fail',
-                        'message':resp
-                        }
-        else:
-            response={'status':'fail',
-                        'message':'provide valid token'
-                    }
-            return make_response(jsonify(response))
 
 class UserLogout(Resource):
+    '''
+    Logout endpoint. Just incase user needs to logout before their token can expire.
+    '''
+
     def post(self):
         auth_header = request.headers.get('Authorization')
         if auth_header:
-            auth_token = auth_header.split(" ")[1]
+            auth_token = auth_header
         else:
             auth_token = ''
         if auth_token:
@@ -164,26 +167,30 @@ class UserLogout(Resource):
                 try:
                     db.session.add(blacklist_token)
                     db.session.commit()
-                    response = {'status':'success',
-                                'message':'Successfully logged out.'
-                        }
-                    return make_response(jsonify(response))
-                except(Exception):
-                    response = {'status':'Fail',
-                                'message':Exception
+                    response = {'status': 'success',
+                                'message': 'Successfully logged out.'
                                 }
-                    return make_response(jsonify(response))
-            response = {'status':'fail',
-                        'message':resp
-                        }
-            return make_response(jsonify(response))
+                    response = jsonify(response)
+                    response.status_code = 200
+                    return make_response(response)
+                except(Exception):
+                    response = jsonify(exception_error_response)
+                    response.status_code = 400
+                    return make_response(response)
+            else:
+                response = jsonify({'status': 'fail',
+                                    'message': "user {} does not exist".format(resp)
+                                    })
+                response.status_code = 400
+            return make_response(response)
         else:
-            response = {'status':'Success',
-                        'message':'Provide a valid auth token'
-                        }
-            return make_response(jsonify(response))
+            response = jsonify({'status': 'Success',
+                                'message': 'Provide a valid auth token'
+                                })
+            response.status_code = 400
+            return make_response(response)
+
 
 api.add_resource(UserRegistration, '/auth/register')
 api.add_resource(UserLogin, '/auth/login')
-api.add_resource(UserStatus, '/auth/status')
-api.add_resource(UserLogout,'/auth/logout')
+api.add_resource(UserLogout, '/auth/logout')

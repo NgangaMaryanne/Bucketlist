@@ -21,8 +21,7 @@ class User(UserMixin, db.Model):
     last_name = db.Column(db.String(60), index=True)
     password_hash = db.Column(db.String(128))
     is_admin = db.Column(db.Boolean, default=False)
-    bucketlists = db.relationship('Bucketlist', backref=db.backref(
-        'bucketlists', uselist=True, cascade='delete,all'))
+    bucketlists = db.relationship('Bucketlist', cascade="save-update, merge, delete")
 
     def __init__(self, email, username, first_name, last_name, password, is_admin=False):
         self.email = email
@@ -65,7 +64,7 @@ class User(UserMixin, db.Model):
     def encode_auth_token(self, user_id):
         try:
             payload = {
-            'exp':datetime.datetime.utcnow()+datetime.timedelta(days=1),
+            'exp':datetime.datetime.utcnow()+datetime.timedelta(minutes=30),
             'iat':datetime.datetime.utcnow(),
             'sub':user_id
             }
@@ -73,7 +72,19 @@ class User(UserMixin, db.Model):
         except(Exception):
             return Exception
 
-    
+    @staticmethod
+    def decode_auth_token(auth_token):
+        try:
+            payload = jwt.decode(auth_token, os.getenv('SECRET_KEY'))
+            is_blacklisted_token = BlacklistToken.check_blacklisted_token(auth_token)
+            if is_blacklisted_token:
+                return 'Token is blacklisted. Please log in again.'
+            else:
+                return payload['sub']
+        except(jwt.ExpiredSignatureError):
+            return "Signature expired. Please log in again."
+        except(jwt.InvalidTokenError):
+            return "Invalid token. Please log in again."
 
     
 
@@ -99,11 +110,6 @@ class BlacklistToken(db.Model):
     def __repr__(self):
         return '<id: token: {0}'.format(self.token)
 
-# @login_manager.user_loader
-# def load_user(user_id):
-#     return User.query.get(int(user_id))
-
-
 class Bucketlist(db.Model):
     __tablename__ = 'bucketlists'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -111,7 +117,7 @@ class Bucketlist(db.Model):
     date_created = db.Column(db.DateTime, default=datetime.datetime.utcnow())
     date_modified = db.Column(db.DateTime, default=datetime.datetime.utcnow())
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
-    items = db.relationship('Item', backref=db.backref('items', uselist=True, cascade='delete,all'))
+    items = db.relationship('Item', cascade="save-update, merge, delete")
 
     def __repr__(self):
         return '<Bucketlist: {}>' .format(self.name)
