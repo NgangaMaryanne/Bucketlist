@@ -265,11 +265,8 @@ class BucketlistItems(Resource):
                         }
             return make_response(jsonify(response))
 
-<<<<<<< HEAD
+
 api.add_resource(BucketlistApi, '/api/v1/bucketlists/','/api/v1/bucketlists/<int:bucket_id>' )
-=======
-api.add_resource(BucketlistApi, '/api/v1/bucketlists','/api/v1/bucketlists/<int:bucket_id>/' )
->>>>>>> 123bc3def81a1225784e70671fde6df71c08c345
-api.add_resource(BucketlistItems, '/api/v1/bucketlists/<int:bucket_id>/items', 
-                 '/api/v1/bucketlists/<int:bucket_id>/items/<int:item_id>/')
+api.add_resource(BucketlistItems, '/api/v1/bucketlists/<int:bucket_id>/items/', 
+                 '/api/v1/bucketlists/<int:bucket_id>/items/<int:item_id>')
 
