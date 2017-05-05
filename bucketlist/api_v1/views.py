@@ -42,7 +42,7 @@ class BucketlistApi(Resource):
         implements the GET method of the API resource. if a bucket_id argument is given it returns the bucketlist with 
         that id else it returns all the bucketlists of the logged in user.
         '''
-        if bucket_id is not None:
+        if bucket_id:
             buckets = Bucketlist.query.filter_by(
                 id=bucket_id, created_by=g.user)
             results = bucketlist_schema.dump(buckets, many=True)
@@ -74,11 +74,17 @@ class BucketlistApi(Resource):
                     request.url_root, page_number+1, limit)
             else:
                 next_page = None
+
             results = bucketlist_schema.dump(buckets.items, many=True)
-            response = {'previous page': previous_page,
-                        'next page': next_page,
-                        'results': results}
-            return make_response(jsonify(response))
+            if results.data:
+                response = jsonify({'previous page': previous_page,
+                            'next page': next_page,
+                            'results': results})
+                response.status_code = 200
+                return make_response(response)
+            else:
+                response = jsonify({'message': 'You do not have any bucketlists.'})
+                return make_response(response)
 
     @authentication_required
     def post(self):
