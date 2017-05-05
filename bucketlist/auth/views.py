@@ -29,8 +29,7 @@ class UserRegistration(Resource):
 
     def post(self):
         parser = reqparse.RequestParser()
-        parser.add_argument('email', type=Email,
-                            required=True, help='email is required')
+        parser.add_argument('email', required=True, help='email is required')
         parser.add_argument('username', required=True,
                             help='Username is required')
         parser.add_argument('first_name')
@@ -40,21 +39,23 @@ class UserRegistration(Resource):
         if user_data:
             # check that email is entered correctly.
             if not re.match(r"[^@]+@[^@]+\.[^@]+", user_data['email']):
-                response = {'message': 'invalid email. Please try again'}
-                return make_response(jsonify(response))
+                response = jsonify({'message': 'invalid email. Please try again'})
+                response.status_code = 400
+                return make_response(response)
             # password has to be more than 8 characters.
             if len(user_data['password']) < 8:
-                response = {'message': 'Password too short. Please try again'}
-                return make_response(jsonify(response))
+                response = jsonify({'message': 'Password too short. Please try again'})
+                response.status_code = 400
+                return make_response(response)
                 # check that username is unique
-            user_usrname = user = User.query.filter_by(
+            user_username = User.query.filter_by(
                 username=user_data['username']).first()
-            if user_usrname:
-                response = {
-                    'message': 'Username already exists. Please try again'}
-                return make_response(jsonify(response))
+            if user_username:
+                response = jsonify({
+                    'message': 'Username already exists. Please try again'})
+                response.status_code = 400
+                return make_response(response)
             user = User.query.filter_by(email=user_data['email']).first()
-            # check that username does not exist too
             if not user:
                 try:
                     user = User(
@@ -86,11 +87,11 @@ class UserRegistration(Resource):
             else:
                 response = {
                     'status': 'fail',
-                    'message': 'User exists. please log in.'
+                    'message': 'User with email {} exists. please log in.'.format(user_data['email'])
                 }
                 response = jsonify(response)
                 response.status_code = 400
-                return make_response(response)
+                return response
         else:
             response = {
                 'status': 'fail',
@@ -133,7 +134,7 @@ class UserLogin(Resource):
                         return make_response(response)
                 else:
                     response = {'status': 'fail',
-                                'message': 'User does not exist.'}
+                                'message': 'Wrong credentials please try again.'}
                     response = jsonify(response)
                     response.status_code = 400
                     return make_response(response)
