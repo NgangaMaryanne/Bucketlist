@@ -43,16 +43,27 @@ class BucketlistApi(Resource):
         that id else it returns all the bucketlists of the logged in user.
         '''
         if bucket_id:
-            buckets = Bucketlist.query.filter_by(
-                id=bucket_id, created_by=g.user)
-            results = bucketlist_schema.dump(buckets, many=True)
-            if results.data != []:
+            bucket = Bucketlist.query.filter_by(
+                id=bucket_id, created_by=g.user).first()
+            results = bucketlist_schema.dump(bucket)
+            if results.data:
                 return results
             else:
                 response = {
                     'message': 'You do not have bucket with id {}. Please try again'.format(bucket_id)}
                 return make_response(jsonify(response))
         else:
+            if request.args.get('q'):
+                q =  str(request.args.get('q'))
+                bucket = Bucketlist.query.filter(Bucketlist.name.like('%{}%'.format(q))).filter_by(created_by=g.user).all()
+                results = bucketlist_schema.dump(bucket, many=True)
+                if results.data:
+                    return results
+                else:
+                    response = {
+                        'message': 'You do not have bucketlist whose name contains {}. Please try again'.format(q)}
+                    return make_response(jsonify(response))
+
             if request.args.get('page'):
                 page_number = int(request.args.get('page'))
             else:
@@ -96,7 +107,14 @@ class BucketlistApi(Resource):
         new_bucketlist = parser.parse_args(strict=True)
         bucket = Bucketlist.query.filter_by(
             name=new_bucketlist['name']).first()
-        if not bucket:
+        bucket = bucketlist_schema.dump(bucket)
+        if bucket.data:
+            response = jsonify({'status': 'fail',
+                        'message': 'Bucketlist with that name already exists. please try again.'
+                        })
+            response.status_code = 400
+            return make_response(response)
+        else:
             try:
                 new_bucket = Bucketlist(
                     name=new_bucketlist['name'], created_by=int(g.user))
@@ -114,11 +132,6 @@ class BucketlistApi(Resource):
                 response = {'status': 'fail',
                             'message': str(Exception)}
                 return make_response(jsonify(response))
-        else:
-            response = {'status': 'fail',
-                        'message': 'Bucketlist with that name already exists. please try again.'
-                        }
-            make_response(jsonify(response))
 
     @authentication_required
     def put(self, bucket_id):
