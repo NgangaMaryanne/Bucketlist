@@ -43,10 +43,10 @@ class BucketlistApi(Resource):
         that id else it returns all the bucketlists of the logged in user.
         '''
         if bucket_id:
-            buckets = Bucketlist.query.filter_by(
-                id=bucket_id, created_by=g.user)
-            results = bucketlist_schema.dump(buckets, many=True)
-            if results.data != []:
+            bucket = Bucketlist.query.filter_by(
+                id=bucket_id, created_by=g.user).first()
+            results = bucketlist_schema.dump(bucket)
+            if results.data:
                 return results
             else:
                 response = {
@@ -61,30 +61,40 @@ class BucketlistApi(Resource):
                 limit = int(request.args.get('limit'))
             else:
                 limit = 2
-
-            buckets = Bucketlist.query.filter_by(
-                created_by=g.user).paginate(page_number, limit, False)
+            if request.args.get('q'):
+                q = str(request.args.get('q'))
+                buckets = Bucketlist.query.filter(Bucketlist.name.like('%{}%'.format(q))).filter_by(
+                    created_by=g.user).paginate(page_number, limit, False)
+                
+            else:
+                buckets = Bucketlist.query.filter_by(
+                    created_by=g.user).paginate(page_number, limit, False)
             if buckets.has_prev:
                 previous_page = "{}api/v1/bucketlists?page={}&limit={}".format(
-                    request.url_root, page_number-1, limit)
+                    request.url_root, page_number - 1, limit)
             else:
                 previous_page = None
             if buckets.has_next:
                 next_page = "{}api/v1/bucketlists?page={}&limit={}".format(
-                    request.url_root, page_number+1, limit)
+                    request.url_root, page_number + 1, limit)
             else:
                 next_page = None
 
             results = bucketlist_schema.dump(buckets.items, many=True)
             if results.data:
                 response = jsonify({'previous page': previous_page,
-                            'next page': next_page,
-                            'results': results})
+                                    'next page': next_page,
+                                    'results': results})
                 response.status_code = 200
                 return make_response(response)
             else:
-                response = jsonify({'message': 'You do not have any bucketlists.'})
-                return make_response(response)
+                if q:
+                    response = jsonify(
+                        {'message': 'You do not have any bucketlists whose name contains {}.'.format(q)})
+                    return make_response(response)
+                else:
+                    response = jsonify({'message': 'You do not have any bucketlists.'})
+                    return make_response(response)
 
     @authentication_required
     def post(self):
@@ -96,7 +106,14 @@ class BucketlistApi(Resource):
         new_bucketlist = parser.parse_args(strict=True)
         bucket = Bucketlist.query.filter_by(
             name=new_bucketlist['name']).first()
-        if not bucket:
+        bucket = bucketlist_schema.dump(bucket)
+        if bucket.data:
+            response = jsonify({'status': 'fail',
+                                'message': 'Bucketlist with that name already exists. please try again.'
+                                })
+            response.status_code = 400
+            return make_response(response)
+        else:
             try:
                 new_bucket = Bucketlist(
                     name=new_bucketlist['name'], created_by=int(g.user))
@@ -114,11 +131,6 @@ class BucketlistApi(Resource):
                 response = {'status': 'fail',
                             'message': str(Exception)}
                 return make_response(jsonify(response))
-        else:
-            response = {'status': 'fail',
-                        'message': 'Bucketlist with that name already exists. please try again.'
-                        }
-            make_response(jsonify(response))
 
     @authentication_required
     def put(self, bucket_id):
