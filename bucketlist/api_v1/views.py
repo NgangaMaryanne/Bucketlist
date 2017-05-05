@@ -53,17 +53,6 @@ class BucketlistApi(Resource):
                     'message': 'You do not have bucket with id {}. Please try again'.format(bucket_id)}
                 return make_response(jsonify(response))
         else:
-            if request.args.get('q'):
-                q =  str(request.args.get('q'))
-                bucket = Bucketlist.query.filter(Bucketlist.name.like('%{}%'.format(q))).filter_by(created_by=g.user).all()
-                results = bucketlist_schema.dump(bucket, many=True)
-                if results.data:
-                    return results
-                else:
-                    response = {
-                        'message': 'You do not have bucketlist whose name contains {}. Please try again'.format(q)}
-                    return make_response(jsonify(response))
-
             if request.args.get('page'):
                 page_number = int(request.args.get('page'))
             else:
@@ -72,30 +61,40 @@ class BucketlistApi(Resource):
                 limit = int(request.args.get('limit'))
             else:
                 limit = 2
-
-            buckets = Bucketlist.query.filter_by(
-                created_by=g.user).paginate(page_number, limit, False)
+            if request.args.get('q'):
+                q = str(request.args.get('q'))
+                buckets = Bucketlist.query.filter(Bucketlist.name.like('%{}%'.format(q))).filter_by(
+                    created_by=g.user).paginate(page_number, limit, False)
+                
+            else:
+                buckets = Bucketlist.query.filter_by(
+                    created_by=g.user).paginate(page_number, limit, False)
             if buckets.has_prev:
                 previous_page = "{}api/v1/bucketlists?page={}&limit={}".format(
-                    request.url_root, page_number-1, limit)
+                    request.url_root, page_number - 1, limit)
             else:
                 previous_page = None
             if buckets.has_next:
                 next_page = "{}api/v1/bucketlists?page={}&limit={}".format(
-                    request.url_root, page_number+1, limit)
+                    request.url_root, page_number + 1, limit)
             else:
                 next_page = None
 
             results = bucketlist_schema.dump(buckets.items, many=True)
             if results.data:
                 response = jsonify({'previous page': previous_page,
-                            'next page': next_page,
-                            'results': results})
+                                    'next page': next_page,
+                                    'results': results})
                 response.status_code = 200
                 return make_response(response)
             else:
-                response = jsonify({'message': 'You do not have any bucketlists.'})
-                return make_response(response)
+                if q:
+                    response = jsonify(
+                        {'message': 'You do not have any bucketlists whose name contains {}.'.format(q)})
+                    return make_response(response)
+                else:
+                    response = jsonify({'message': 'You do not have any bucketlists.'})
+                    return make_response(response)
 
     @authentication_required
     def post(self):
@@ -110,8 +109,8 @@ class BucketlistApi(Resource):
         bucket = bucketlist_schema.dump(bucket)
         if bucket.data:
             response = jsonify({'status': 'fail',
-                        'message': 'Bucketlist with that name already exists. please try again.'
-                        })
+                                'message': 'Bucketlist with that name already exists. please try again.'
+                                })
             response.status_code = 400
             return make_response(response)
         else:
