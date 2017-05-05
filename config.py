@@ -7,6 +7,9 @@ class Config(object):
 
 
 class DevelopmentConfig(Config):
+    '''
+    Development configuration.
+    '''
     DEBUG = True
     SQLALCHEMY_ECHO = True
     SQLALCHEMY_DATABASE_URI= 'postgresql://localhost/bucket'
@@ -14,9 +17,15 @@ class DevelopmentConfig(Config):
 
 
 class ProductionConfig(Config):
+    '''
+    Put production configuration here.
+    '''
     DEBUG = False
 
 class TestingConfig(Config):
+    '''
+    Put testing configuration here.
+    '''
     TESTING = True
     SQLALCHEMY_ECHO = True
     SQLALCHEMY_DATABASE_URI= 'sqlite:////'+basedir+'/test.db'
