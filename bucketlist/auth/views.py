@@ -149,49 +149,5 @@ class UserLogin(Resource):
             response.status_code = 400
             return make_response(response)
 
-
-class UserLogout(Resource):
-    '''
-    Logout endpoint. Just incase user needs to logout before their token can expire.
-    '''
-
-    def post(self):
-        auth_header = request.headers.get('Authorization')
-        if auth_header:
-            auth_token = auth_header
-        else:
-            auth_token = ''
-        if auth_token:
-            resp = User.decode_auth_token(auth_token)
-            if not isinstance(resp, str):
-                blacklist_token = BlacklistToken(token=auth_token)
-                try:
-                    db.session.add(blacklist_token)
-                    db.session.commit()
-                    response = {'status': 'success',
-                                'message': 'Successfully logged out.'
-                                }
-                    response = jsonify(response)
-                    response.status_code = 200
-                    return make_response(response)
-                except(Exception):
-                    response = jsonify(exception_error_response)
-                    response.status_code = 400
-                    return make_response(response)
-            else:
-                response = jsonify({'status': 'fail',
-                                    'message': "user {} does not exist".format(resp)
-                                    })
-                response.status_code = 400
-            return make_response(response)
-        else:
-            response = jsonify({'status': 'Success',
-                                'message': 'Provide a valid auth token'
-                                })
-            response.status_code = 400
-            return make_response(response)
-
-
 api.add_resource(UserRegistration, '/auth/register')
 api.add_resource(UserLogin, '/auth/login')
-api.add_resource(UserLogout, '/auth/logout')
