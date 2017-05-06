@@ -1,4 +1,4 @@
-from marshmallow import Schema, fields, pprint, validate
+from marshmallow import Schema, fields, validate
 
 
 class BucketlistItemSchema(Schema):

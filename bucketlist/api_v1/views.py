@@ -1,8 +1,9 @@
+from functools import wraps
+import datetime
+
 from flask import request, make_response, jsonify, g as global_user
 from flask_restful import Resource, Api, reqparse
 from sqlalchemy.exc import SQLAlchemyError
-from functools import wraps
-import datetime
 
 from .import apiv1
 from ..models import User, Bucketlist, Item
@@ -65,7 +66,7 @@ class BucketlistApi(Resource):
                 q = str(request.args.get('q'))
                 buckets = Bucketlist.query.filter(Bucketlist.name.like('%{}%'.format(q))).filter_by(
                     created_by=global_user.user).paginate(page_number, limit, False)
-                
+
             else:
                 buckets = Bucketlist.query.filter_by(
                     created_by=global_user.user).paginate(page_number, limit, False)
@@ -94,7 +95,8 @@ class BucketlistApi(Resource):
                         {'message': 'You do not have any bucketlists whose name contains {}.'.format(q)})
                     return make_response(response)
                 else:
-                    response = jsonify({'message': 'You do not have any bucketlists.'})
+                    response = jsonify(
+                        {'message': 'You do not have any bucketlists.'})
                     return make_response(response)
 
     @authentication_required
@@ -139,7 +141,8 @@ class BucketlistApi(Resource):
         Updates a bucketlist takes in the new bucketlist name as argument
         '''
         parser = reqparse.RequestParser()
-        parser.add_argument('name', type=str, help="Please input new bucketlist name.")
+        parser.add_argument(
+            'name', type=str, help="Please input new bucketlist name.")
         updated_bucket = parser.parse_args(strict=True)
         bucket = Bucketlist.query.filter_by(
             id=bucket_id, created_by=int(global_user.user)).first()
