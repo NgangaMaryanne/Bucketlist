@@ -1,12 +1,11 @@
-import jwt
 import os
 import datetime
+
+import jwt
 from flask_login import UserMixin
-from marshmallow_jsonapi import Schema, fields
-from marshmallow import validate
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from bucketlist import db, login_manager
+from bucketlist import db
 
 
 class User(UserMixin, db.Model):
@@ -21,7 +20,8 @@ class User(UserMixin, db.Model):
     last_name = db.Column(db.String(60), index=True)
     password_hash = db.Column(db.String(128))
     is_admin = db.Column(db.Boolean, default=False)
-    bucketlists = db.relationship('Bucketlist', cascade="save-update, merge, delete")
+    bucketlists = db.relationship(
+        'Bucketlist', cascade="save-update, merge, delete")
 
     def __init__(self, email, username, first_name, last_name, password, is_admin=False):
         self.email = email
@@ -43,8 +43,6 @@ class User(UserMixin, db.Model):
     def verify_password(self, password):
         return check_password_hash(self.password_hash, password)
 
-
-
     def __repr__(self):
         return '<User:{}>'.format(self.username)
 
@@ -60,13 +58,13 @@ class User(UserMixin, db.Model):
         db.session.delete(resource)
         db.session.commit()
 
-    #method to encode token
+    # method to encode token
     def encode_auth_token(self, user_id):
         try:
             payload = {
-            'exp':datetime.datetime.utcnow()+datetime.timedelta(minutes=30),
-            'iat':datetime.datetime.utcnow(),
-            'sub':user_id
+                'expiration': datetime.datetime.utcnow()+datetime.timedelta(minutes=10),
+                'generated_at': datetime.datetime.utcnow(),
+                'user_identifier': user_id
             }
             return jwt.encode(payload, os.getenv('SECRET_KEY'), algorithm='HS256')
         except(Exception):
@@ -76,39 +74,12 @@ class User(UserMixin, db.Model):
     def decode_auth_token(auth_token):
         try:
             payload = jwt.decode(auth_token, os.getenv('SECRET_KEY'))
-            is_blacklisted_token = BlacklistToken.check_blacklisted_token(auth_token)
-            if is_blacklisted_token:
-                return 'Token is blacklisted. Please log in again.'
-            else:
-                return payload['sub']
+            return payload['sub']
         except(jwt.ExpiredSignatureError):
             return "Signature expired. Please log in again."
         except(jwt.InvalidTokenError):
             return "Invalid token. Please log in again."
 
-    
-
-#model for blacklist tokens 
-class BlacklistToken(db.Model):
-    __tablename__ = 'blacklist_tokens'
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    token = db.Column(db.String(500), unique=True, nullable=False)
-    blacklisted_on = db.Column(db.DateTime, nullable=False)
-
-    def __init__(self, token):
-        self.token = token
-        self.blacklisted_on = datetime.datetime.utcnow()
-
-    @staticmethod
-    def check_blacklisted_token(auth_token):
-        response = BlacklistToken.query.filter_by(token=str(auth_token)).first()
-        if response:
-            return True
-        else:
-            return False
-
-    def __repr__(self):
-        return '<id: token: {0}'.format(self.token)
 
 class Bucketlist(db.Model):
     __tablename__ = 'bucketlists'
@@ -127,7 +98,6 @@ class Bucketlist(db.Model):
         self.created_by = created_by
         self.date_created = datetime.datetime.utcnow()
         self.date_modified = datetime.datetime.utcnow()
-
 
 
 class Item(db.Model):
