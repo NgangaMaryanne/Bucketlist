@@ -1,4 +1,4 @@
-from flask import request, make_response, jsonify, g
+from flask import request, make_response, jsonify, g as global_user
 from flask_restful import Resource, Api, reqparse
 from sqlalchemy.exc import SQLAlchemyError
 from functools import wraps
@@ -15,20 +15,20 @@ api = Api(apiv1)
 
 
 # Handle authentication
-def authentication_required(f):
-    @wraps(f)
+def authentication_required(function):
+    @wraps(function)
     def decorated_function(*args, **kwargs):
         auth_token = request.headers.get('Authorization')
         if not auth_token:
             response = {'message': 'Please login to access this resource.'}
             return make_response(jsonify(response))
         this_user_id = User.decode_auth_token(auth_token)
-        if type(this_user_id) != int:
+        if not isinstance(this_user_id, int):
             response = {'status': 'fail',
                         'error': this_user_id}
             return make_response(jsonify(response))
-        g.user = this_user_id
-        return f(*args, **kwargs)
+        global_user.user = this_user_id
+        return function(*args, **kwargs)
     return decorated_function
 
 
@@ -44,7 +44,7 @@ class BucketlistApi(Resource):
         '''
         if bucket_id:
             bucket = Bucketlist.query.filter_by(
-                id=bucket_id, created_by=g.user).first()
+                id=bucket_id, created_by=global_user.user).first()
             results = bucketlist_schema.dump(bucket)
             if results.data:
                 return results
@@ -60,15 +60,15 @@ class BucketlistApi(Resource):
             if request.args.get('limit'):
                 limit = int(request.args.get('limit'))
             else:
-                limit = 2
+                limit = 20
             if request.args.get('q'):
                 q = str(request.args.get('q'))
                 buckets = Bucketlist.query.filter(Bucketlist.name.like('%{}%'.format(q))).filter_by(
-                    created_by=g.user).paginate(page_number, limit, False)
+                    created_by=global_user.user).paginate(page_number, limit, False)
                 
             else:
                 buckets = Bucketlist.query.filter_by(
-                    created_by=g.user).paginate(page_number, limit, False)
+                    created_by=global_user.user).paginate(page_number, limit, False)
             if buckets.has_prev:
                 previous_page = "{}api/v1/bucketlists?page={}&limit={}".format(
                     request.url_root, page_number - 1, limit)
@@ -88,7 +88,8 @@ class BucketlistApi(Resource):
                 response.status_code = 200
                 return make_response(response)
             else:
-                if q:
+                if request.args.get('q'):
+                    q = request.args.get('q')
                     response = jsonify(
                         {'message': 'You do not have any bucketlists whose name contains {}.'.format(q)})
                     return make_response(response)
@@ -116,7 +117,7 @@ class BucketlistApi(Resource):
         else:
             try:
                 new_bucket = Bucketlist(
-                    name=new_bucketlist['name'], created_by=int(g.user))
+                    name=new_bucketlist['name'], created_by=int(global_user.user))
                 db.session.add(new_bucket)
                 db.session.commit()
                 response = {'status': 'success',
@@ -138,10 +139,10 @@ class BucketlistApi(Resource):
         Updates a bucketlist takes in the new bucketlist name as argument
         '''
         parser = reqparse.RequestParser()
-        parser.add_argument('name')
-        updated_bucket = parser.parse_args()
+        parser.add_argument('name', type=str, help="Please input new bucketlist name.")
+        updated_bucket = parser.parse_args(strict=True)
         bucket = Bucketlist.query.filter_by(
-            id=bucket_id, created_by=int(g.user)).first()
+            id=bucket_id, created_by=int(global_user.user)).first()
         if bucket and updated_bucket:
             try:
                 bucket.name = updated_bucket['name']
@@ -173,7 +174,7 @@ class BucketlistApi(Resource):
         Deletes the bucketlist with the given id.
         '''
         bucket = Bucketlist.query.filter_by(
-            id=bucket_id, created_by=int(g.user)).first()
+            id=bucket_id, created_by=int(global_user.user)).first()
         if bucket:
             try:
                 db.session.delete(bucket)
@@ -241,22 +242,28 @@ class BucketlistItems(Resource):
         parser = reqparse.RequestParser()
         parser.add_argument("name")
         parser.add_argument(
-            "done", type=bool, help="Please imput True/1 for done or False/0 for not done.")
+            "done", type=str, help="Please input 'true' for done or 'false' for not done.")
         updated_item = parser.parse_args()
         bucket_query = Bucketlist.query.filter_by(
-            id=bucket_id, created_by=int(g.user)).first()
-        bucket_query = bucketlist_schema.dump(bucket_query)
-        if bucket_query.data:
+            id=bucket_id, created_by=int(global_user.user)).first()
+        bucket_results = bucketlist_schema.dump(bucket_query)
+        if bucket_results.data:
             item_query = Item.query.filter_by(
                 id=item_id, bucketlist_id=bucket_id).first()
             if item_query:
                 try:
                     if updated_item['name']:
                         item_query.name = updated_item['name']
-                    if updated_item['done'] and updated_item['done'] in [1, 0]:
-                        item_query.done = updated_item['done']
+                    if updated_item['done'] and updated_item['done'].lower() in ["false", "true"]:
+                        if updated_item['done'].lower() == "true":
+                            item_query.done = True
+                        else:
+                            item_query.done = False
                     item_query.date_modified = datetime.datetime.utcnow()
                     db.session.add(item_query)
+                    db.session.commit()
+                    bucket_query.date_modified = datetime.datetime.utcnow()
+                    db.session.add(bucket_query)
                     db.session.commit()
                     response = {'status': 'success',
                                 'message': 'item {} updated successfully'.format(item_id)}
