@@ -322,7 +322,7 @@ class BucketlistItems(Resource):
             return make_response(jsonify(response))
 
 
-api.add_resource(BucketlistApi, '/api/v1/bucketlists/',
+api.add_resource(BucketlistApi, '/api/v1/bucketlists',
                  '/api/v1/bucketlists/<int:bucket_id>')
-api.add_resource(BucketlistItems, '/api/v1/bucketlists/<int:bucket_id>/items/',
+api.add_resource(BucketlistItems, '/api/v1/bucketlists/<int:bucket_id>/items',
                  '/api/v1/bucketlists/<int:bucket_id>/items/<int:item_id>')

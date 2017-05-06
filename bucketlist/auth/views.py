@@ -1,10 +1,10 @@
 import re
-from flask import request, jsonify, make_response
+from flask import jsonify, make_response
 from flask_restful import Resource, Api, reqparse
 from sqlalchemy.exc import SQLAlchemyError
 
 from .import auth
-from ..models import User, BlacklistToken
+from ..models import User
 from ..serializer import UserSchema
 from .. import db
 

@@ -62,9 +62,9 @@ class User(UserMixin, db.Model):
     def encode_auth_token(self, user_id):
         try:
             payload = {
-                'expiration': datetime.datetime.utcnow()+datetime.timedelta(minutes=10),
-                'generated_at': datetime.datetime.utcnow(),
-                'user_identifier': user_id
+                'exp': datetime.datetime.utcnow()+datetime.timedelta(minutes=10),
+                'iat': datetime.datetime.utcnow(),
+                'sub': user_id
             }
             return jwt.encode(payload, os.getenv('SECRET_KEY'), algorithm='HS256')
         except(Exception):
