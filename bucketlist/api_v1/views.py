@@ -105,8 +105,8 @@ class BucketlistApi(Resource):
         Implements the POST method of the API endpoint takes in a bucketlist name as an argument.
         '''
         parser = reqparse.RequestParser()
-        parser.add_argument('name', 'Please input bucketlist name.')
-        new_bucketlist = parser.parse_args(strict=True)
+        parser.add_argument('name', required=True, help='Please input bucketlist name.')
+        new_bucketlist = parser.parse_args()
         bucket = Bucketlist.query.filter_by(
             name=new_bucketlist['name']).first()
         bucket = bucketlist_schema.dump(bucket)
@@ -152,9 +152,11 @@ class BucketlistApi(Resource):
                 bucket.date_modified = datetime.datetime.utcnow()
                 db.session.add(bucket)
                 db.session.commit()
-                response = {'status': 'success',
-                            'message': 'Bucketlist updated.'}
-                return make_response(jsonify(response))
+                response = jsonify({'status': 'success',
+                            'message': 'Bucketlist updated.'})
+                response.status_code = 204
+
+                return make_response(response)
             except(Exception):
                 response = {'status': 'fail',
                             'message': 'Please try again',
