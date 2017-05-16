@@ -64,6 +64,7 @@ class BucketlistApi(Resource):
                 limit = 20
             if request.args.get('q'):
                 q = str(request.args.get('q'))
+                q = q.lower()
                 buckets = Bucketlist.query.filter(Bucketlist.name.like('%{}%'.format(q))).filter_by(
                     created_by=global_user.user).paginate(page_number, limit, False)
 
@@ -83,8 +84,8 @@ class BucketlistApi(Resource):
 
             results = bucketlist_schema.dump(buckets.items, many=True)
             if results.data:
-                response = jsonify({'previous page': previous_page,
-                                    'next page': next_page,
+                response = jsonify({'previousPage': previous_page,
+                                    'nextPage': next_page,
                                     'results': results})
                 response.status_code = 200
                 return make_response(response)
@@ -107,8 +108,9 @@ class BucketlistApi(Resource):
         parser = reqparse.RequestParser()
         parser.add_argument('name', required=True, help='Please input bucketlist name.')
         new_bucketlist = parser.parse_args()
+        bucket_name = new_bucketlist['name'].lower()
         bucket = Bucketlist.query.filter_by(
-            name=new_bucketlist['name']).first()
+            name=bucket_name).first()
         bucket = bucketlist_schema.dump(bucket)
         if bucket.data:
             response = jsonify({'status': 'fail',
@@ -119,7 +121,7 @@ class BucketlistApi(Resource):
         else:
             try:
                 new_bucket = Bucketlist(
-                    name=new_bucketlist['name'], created_by=int(global_user.user))
+                    name=bucket_name, created_by=int(global_user.user))
                 db.session.add(new_bucket)
                 db.session.commit()
                 response = {'status': 'success',
@@ -148,7 +150,7 @@ class BucketlistApi(Resource):
             id=bucket_id, created_by=int(global_user.user)).first()
         if bucket and updated_bucket:
             try:
-                bucket.name = updated_bucket['name']
+                bucket.name = updated_bucket['name'].lower()
                 bucket.date_modified = datetime.datetime.utcnow()
                 db.session.add(bucket)
                 db.session.commit()
@@ -215,11 +217,12 @@ class BucketlistItems(Resource):
         parser = reqparse.RequestParser()
         parser.add_argument('name', help='Please input item name.')
         new_item = parser.parse_args()
+        item_name = new_item['name'].lower()
         item_query = Item.query.filter_by(
-            bucketlist_id=bucket_id, name=new_item['name']).first()
+            bucketlist_id=bucket_id, name=item_name).first()
         if not item_query:
             try:
-                item = Item(name=new_item['name'], bucketlist_id=bucket_id)
+                item = Item(name=item_name, bucketlist_id=bucket_id)
                 db.session.add(item)
                 db.session.commit()
                 response = {'status': 'success',
@@ -258,7 +261,7 @@ class BucketlistItems(Resource):
             if item_query:
                 try:
                     if updated_item['name']:
-                        item_query.name = updated_item['name']
+                        item_query.name = updated_item['name'].lower()
                     if updated_item['done'] and updated_item['done'].lower() in ["false", "true"]:
                         if updated_item['done'].lower() == "true":
                             item_query.done = True
