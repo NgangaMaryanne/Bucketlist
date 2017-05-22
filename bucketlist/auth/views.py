@@ -116,14 +116,13 @@ class UserLogin(Resource):
 
     def post(self):
         parser = reqparse.RequestParser()
-        parser.add_argument("email", "Please enter your Email to login")
-        parser.add_argument("password", "Please enter your password")
+        parser.add_argument("email", help="Please enter your Email to login")
+        parser.add_argument("password", help="Please enter your password")
         user_details = parser.parse_args(strict=True)
         if user_details:
             try:
                 user = User.query.filter_by(
                     email=user_details['email']).first()
-                print("this is a test", user)
                 if user and user.verify_password(user_details['password']):
                     auth_token = user.encode_auth_token(user.id)
                     if auth_token:

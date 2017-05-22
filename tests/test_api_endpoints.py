@@ -23,20 +23,14 @@ class ApiEndpointTestCase(unittest.TestCase):
         credentials = {"email": "gladiz.nganga@andela.com", "password": "saxophone"}
         self.login_response = self.client.post(
             '/auth/login', data= credentials)
-        print("ajkfayg vtyF yuafuakHJA UBAKDUHFAN UAYHBFAU JAHBDUJA", json.loads(self.login_response.data))
         self.auth_token = json.loads(self.login_response.data)['auth_token']
 
         self.post_response = self.client.post('/api/v1/bucketlists', data=json.dumps({"name": "cool stuff"}), headers={'Content-Type': 'application/json',
                                                                                                                        'Access-Control-Allow-Origin': '*', 'Authorization': self.auth_token})
-        print("kgjakgaugiaigoaikomvavnmajfvma", json.loads(self.post_response.data))
         self.post_items = self.client.post('/api/v1/bucketlists/1/items', data=json.dumps({"name": "sky dive"}), 
                                            headers={'Content-Type': 'application/json',
                                              'Access-Control-Allow-Origin': '*', 'Authorization': self.auth_token})
-        print("agkjfaugjaoujrfoaijlmvaaiuhniuhkjnvaoks", json.loads(self.post_items.data))
 
-    def tearDown(self):
-        db.session.remove()
-        db.drop_all()
 
     def test_bucketlist_get(self):
 
@@ -102,4 +96,6 @@ class ApiEndpointTestCase(unittest.TestCase):
         self.assertEqual(message, "item deleted.")
         self.assertEqual(delete_response.status_code, 200)
 
-    
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
