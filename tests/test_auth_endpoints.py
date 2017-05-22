@@ -52,15 +52,15 @@ class AuthenticationTest(unittest.TestCase):
 
     def test_login(self):
         login_credentials = {
-            'email': 'maryanne.nganga@andela.com',
-            'password': 'saxophone'
+            "email": "maryanne.nganga@andela.com",
+            "password": "saxophone"
          }
         response = self.client.post(
             '/auth/login', data=login_credentials)
         self.assertEqual(response.status_code, 200)
 
     def test_login_invalid_credentials(self):
-        login_credentials = {'email': 'maryanne.nganga@andela.com', 'password': ''}
+        login_credentials = {"email": "maryanne.nganga@andela.com", "password": ""}
         response = self.client.post(
             '/auth/login', data=login_credentials)
         self.assertEqual(response.status_code, 400)
