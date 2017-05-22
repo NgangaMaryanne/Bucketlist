@@ -51,10 +51,7 @@ class AuthenticationTest(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_login(self):
-        login_credentials = {
-            "email": "maryanne.nganga@andela.com",
-            "password": "saxophone"
-         }
+        login_credentials = {"email": "maryanne.nganga@andela.com", "password": "saxophone"}
         response = self.client.post(
             '/auth/login', data=login_credentials)
         self.assertEqual(response.status_code, 200)
