@@ -13,7 +13,7 @@ api = Api(auth)
 # custom error messages
 exception_error_response = {
     'status': 'failed',
-    'message': Exception
+    'message': str(Exception)
 }
 sqlalchemy_error_response = {
     'error': SQLAlchemyError,
