@@ -1,4 +1,5 @@
 import unittest
+import json
 
 from bucketlist import db, create_app
 
@@ -16,9 +17,7 @@ class AuthenticationTest(unittest.TestCase):
         user_data1 = {'email': 'maryanne.nganga@andela.com', 'first_name': 'maryanne', 'last_name': 'Nganga',
                      'username': 'maryanne', 'password': 'saxophone'}
         self.register_response = self.client.post(
-            '/auth/register', data=json.dumps(user_data1))
-        self.bucket_response = self.client.post(
-            '/bucketlist', data={'name': 'Crazy Stuff Bucketlist'})
+            '/auth/register', data=user_data1)
 
     def test_register(self):
         self.assertEqual(self.register_response.status_code, 201)
