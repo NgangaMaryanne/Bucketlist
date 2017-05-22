@@ -21,7 +21,7 @@ class ApiEndpointTestCase(unittest.TestCase):
         self.register_response = self.client.post(
             '/auth/register', data=user_data1)
         self.login_response = self.client.post(
-            '/auth/login', data=json.dumps({"email": "gladiz.nganga@andela.com", "password": "saxophone"}))
+            '/auth/login', data={"email": "gladiz.nganga@andela.com", "password": "saxophone"})
         print("ajkfayg vtyF yuafuakHJA UBAKDUHFAN UAYHBFAU JAHBDUJA", json.loads(self.login_response.data))
         self.auth_token = json.loads(self.login_response.data)['auth_token']
 
