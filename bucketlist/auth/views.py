@@ -123,6 +123,7 @@ class UserLogin(Resource):
             try:
                 user = User.query.filter_by(
                     email=user_details['email']).first()
+                print("this is a test", user)
                 if user and user.verify_password(user_details['password']):
                     auth_token = user.encode_auth_token(user.id)
                     if auth_token:
