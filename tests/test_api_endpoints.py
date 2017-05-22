@@ -10,6 +10,7 @@ class ApiEndpointTestCase(unittest.TestCase):
         self.app = create_app('testing')
         self.app_context = self.app.app_context()
         self.app_context.push()
+        db.drop_all()
         db.create_all()
         self.client = self.app.test_client()
         self._ctx = self.app.test_request_context()
