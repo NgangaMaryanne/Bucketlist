@@ -10,6 +10,7 @@ class ApiEndpointTestCase(unittest.TestCase):
         self.app = create_app('testing')
         self.app_context = self.app.app_context()
         self.app_context.push()
+        db.session.remove()
         db.drop_all()
         db.create_all()
         self.client = self.app.test_client()
@@ -19,9 +20,8 @@ class ApiEndpointTestCase(unittest.TestCase):
                       "username": "gladiz", "password": "saxophone"}
         self.register_response = self.client.post(
             '/auth/register', data=user_data1)
-        print("kjadgyEY ihfbyuH IHfniuj UBN J", json.loads(self.register_response.data))
         self.login_response = self.client.post(
-            '/auth/login', data={"email": "gladiz.nganga@andela.com", "password": "saxophone"})
+            '/auth/login', data=json.dumps({"email": "gladiz.nganga@andela.com", "password": "saxophone"}))
         print("ajkfayg vtyF yuafuakHJA UBAKDUHFAN UAYHBFAU JAHBDUJA", json.loads(self.login_response.data))
         self.auth_token = json.loads(self.login_response.data)['auth_token']
 
