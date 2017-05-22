@@ -160,20 +160,24 @@ class BucketlistApi(Resource):
 
                 return make_response(response)
             except(Exception):
-                response = {'status': 'fail',
+                response = jsonify({'status': 'fail',
                             'message': 'Please try again',
-                            'error': str(Exception)}
-                return make_response(jsonify(response))
+                            'error': str(Exception)})
+                response.status_code = 400
+                return make_response(response)
             except(SQLAlchemyError):
                 db.session.rollback()
-                response = {'status': 'fail',
-                            'message': str(SQLAlchemyError)}
-                return make_response(jsonify(response))
+                response = jsonify({'status': 'fail',
+                            'message': str(SQLAlchemyError)})
+                response.status_code = 400
+                return make_response(response)
 
         else:
-            response = {
-                'message': 'You do not have a bucket with id {0}'.format(bucket_id)}
-            return make_response(jsonify(response))
+            response = jsonify({
+                'message': 'You do not have a bucket with id {0}'.format(bucket_id)})
+
+            response.status_code = 400
+            return make_response(response)
 
     @authentication_required
     def delete(self, bucket_id):

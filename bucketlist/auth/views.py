@@ -13,7 +13,7 @@ api = Api(auth)
 # custom error messages
 exception_error_response = {
     'status': 'failed',
-    'message': Exception
+    'message': str(Exception)
 }
 sqlalchemy_error_response = {
     'error': SQLAlchemyError,
@@ -116,8 +116,8 @@ class UserLogin(Resource):
 
     def post(self):
         parser = reqparse.RequestParser()
-        parser.add_argument("email", "Please enter your Email to login")
-        parser.add_argument("password", "Please enter your password")
+        parser.add_argument("email", help="Please enter your Email to login")
+        parser.add_argument("password", help="Please enter your password")
         user_details = parser.parse_args(strict=True)
         if user_details:
             try:

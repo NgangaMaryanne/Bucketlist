@@ -10,16 +10,19 @@ class ApiEndpointTestCase(unittest.TestCase):
         self.app = create_app('testing')
         self.app_context = self.app.app_context()
         self.app_context.push()
+        db.session.remove()
+        db.drop_all()
         db.create_all()
         self.client = self.app.test_client()
         self._ctx = self.app.test_request_context()
         self._ctx.push()
-        user_data1 = {"email": "maryanne.nganga@andela.com", "first_name": "maryanne", "last_name": "Nganga",
-                      "username": "maryanne", "password": "saxophone"}
+        user_data1 = {"email": "gladiz.nganga@andela.com", "first_name": "gladiz", "last_name": "Nganga",
+                      "username": "gladiz", "password": "saxophone"}
         self.register_response = self.client.post(
             '/auth/register', data=user_data1)
+        credentials = {"email": "gladiz.nganga@andela.com", "password": "saxophone"}
         self.login_response = self.client.post(
-            '/auth/login', data={"email": "maryanne.nganga@andela.com", "password": "saxophone"})
+            '/auth/login', data= credentials)
         self.auth_token = json.loads(self.login_response.data)['auth_token']
 
         self.post_response = self.client.post('/api/v1/bucketlists', data=json.dumps({"name": "cool stuff"}), headers={'Content-Type': 'application/json',
@@ -27,6 +30,7 @@ class ApiEndpointTestCase(unittest.TestCase):
         self.post_items = self.client.post('/api/v1/bucketlists/1/items', data=json.dumps({"name": "sky dive"}), 
                                            headers={'Content-Type': 'application/json',
                                              'Access-Control-Allow-Origin': '*', 'Authorization': self.auth_token})
+
 
     def test_bucketlist_get(self):
 
