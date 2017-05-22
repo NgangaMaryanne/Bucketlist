@@ -44,6 +44,13 @@ class AuthenticationTest(unittest.TestCase):
             '/auth/register', data=user_data)
         self.assertEqual(response.status_code, 400)
 
+    def test_register_wrong_email(self):
+        user_data = {'email': 'maryanne@.wacekegmail.com', 'first_name': 'maryanne', 'last_name': 'waceke',
+                     'username': 'maryanne', 'password': 'saxophone'}
+        response = self.client.post(
+            '/auth/register', data=user_data)
+        self.assertEqual(response.status_code, 400)
+
     def test_login(self):
         login_credentials = {
             'email': 'maryanne.nganga@andela.com',
