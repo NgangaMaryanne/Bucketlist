@@ -32,6 +32,10 @@ class ApiEndpointTestCase(unittest.TestCase):
                                              'Access-Control-Allow-Origin': '*', 'Authorization': self.auth_token})
         print("agkjfaugjaoujrfoaijlmvaaiuhniuhkjnvaoks", json.loads(self.post_items.data))
 
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+
     def test_bucketlist_get(self):
 
         response = self.client.get('/api/v1/bucketlists', headers={'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*',
@@ -96,6 +100,4 @@ class ApiEndpointTestCase(unittest.TestCase):
         self.assertEqual(message, "item deleted.")
         self.assertEqual(delete_response.status_code, 200)
 
-    def tearDown(self):
-        db.session.remove()
-        db.drop_all()
+    
