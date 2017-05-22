@@ -16,7 +16,7 @@ class AuthenticationTest(unittest.TestCase):
         user_data1 = {'email': 'maryanne.nganga@andela.com', 'first_name': 'maryanne', 'last_name': 'Nganga',
                      'username': 'maryanne', 'password': 'saxophone'}
         self.register_response = self.client.post(
-            '/auth/register', data=user_data1)
+            '/auth/register', data=json.dumps(user_data1))
         self.bucket_response = self.client.post(
             '/bucketlist', data={'name': 'Crazy Stuff Bucketlist'})
 
