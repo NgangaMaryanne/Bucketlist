@@ -18,8 +18,10 @@ class ApiEndpointTestCase(unittest.TestCase):
                       "username": "maryanne", "password": "saxophone"}
         self.register_response = self.client.post(
             '/auth/register', data=user_data1)
+        print("kjadgyEY ihfbyuH IHfniuj UBN J", json.loads(self.register_response.data))
         self.login_response = self.client.post(
             '/auth/login', data={"email": "maryanne.nganga@andela.com", "password": "saxophone"})
+        print("ajkfayg vtyF yuafuakHJA UBAKDUHFAN UAYHBFAU JAHBDUJA", json.loads(self.login_response.data))
         self.auth_token = json.loads(self.login_response.data)['auth_token']
 
         self.post_response = self.client.post('/api/v1/bucketlists', data={"name": "cool stuff"}, headers={'Content-Type': 'application/json',
