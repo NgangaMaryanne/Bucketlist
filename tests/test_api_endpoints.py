@@ -25,10 +25,10 @@ class ApiEndpointTestCase(unittest.TestCase):
         print("ajkfayg vtyF yuafuakHJA UBAKDUHFAN UAYHBFAU JAHBDUJA", json.loads(self.login_response.data))
         self.auth_token = json.loads(self.login_response.data)['auth_token']
 
-        self.post_response = self.client.post('/api/v1/bucketlists', data={"name": "cool stuff"}, headers={'Content-Type': 'application/json',
+        self.post_response = self.client.post('/api/v1/bucketlists', data=json.dumps({"name": "cool stuff"}), headers={'Content-Type': 'application/json',
                                                                                                                        'Access-Control-Allow-Origin': '*', 'Authorization': self.auth_token})
         print("kgjakgaugiaigoaikomvavnmajfvma", json.loads(self.post_response.data))
-        self.post_items = self.client.post('/api/v1/bucketlists/1/items', data={"name": "sky dive"}, 
+        self.post_items = self.client.post('/api/v1/bucketlists/1/items', data=json.dumps({"name": "sky dive"}), 
                                            headers={'Content-Type': 'application/json',
                                              'Access-Control-Allow-Origin': '*', 'Authorization': self.auth_token})
         print("agkjfaugjaoujrfoaijlmvaaiuhniuhkjnvaoks", json.loads(self.post_items.data))
