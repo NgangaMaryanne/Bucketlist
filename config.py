@@ -29,6 +29,7 @@ class TestingConfig(Config):
     TESTING = True
     SQLALCHEMY_ECHO = True
     SQLALCHEMY_DATABASE_URI= 'sqlite:////'+basedir+'/test.db'
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 
 
