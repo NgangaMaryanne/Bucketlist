@@ -20,8 +20,9 @@ class ApiEndpointTestCase(unittest.TestCase):
                       "username": "gladiz", "password": "saxophone"}
         self.register_response = self.client.post(
             '/auth/register', data=user_data1)
+        credentials = {"email": "gladiz.nganga@andela.com", "password": "saxophone"}
         self.login_response = self.client.post(
-            '/auth/login', data=json.dumps({"email": "gladiz.nganga@andela.com", "password": "saxophone"}), headers={'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'})
+            '/auth/login', data= credentials, headers={'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*'})
         print("ajkfayg vtyF yuafuakHJA UBAKDUHFAN UAYHBFAU JAHBDUJA", json.loads(self.login_response.data))
         self.auth_token = json.loads(self.login_response.data)['auth_token']
 
