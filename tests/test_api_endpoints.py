@@ -14,13 +14,13 @@ class ApiEndpointTestCase(unittest.TestCase):
         self.client = self.app.test_client()
         self._ctx = self.app.test_request_context()
         self._ctx.push()
-        user_data1 = {"email": "maryanne.nganga@andela.com", "first_name": "maryanne", "last_name": "Nganga",
-                      "username": "maryanne", "password": "saxophone"}
+        user_data1 = {"email": "gladiz.nganga@andela.com", "first_name": "gladiz", "last_name": "Nganga",
+                      "username": "gladiz", "password": "saxophone"}
         self.register_response = self.client.post(
             '/auth/register', data=user_data1)
         print("kjadgyEY ihfbyuH IHfniuj UBN J", json.loads(self.register_response.data))
         self.login_response = self.client.post(
-            '/auth/login', data={"email": "maryanne.nganga@andela.com", "password": "saxophone"})
+            '/auth/login', data={"email": "gladiz.nganga@andela.com", "password": "saxophone"})
         print("ajkfayg vtyF yuafuakHJA UBAKDUHFAN UAYHBFAU JAHBDUJA", json.loads(self.login_response.data))
         self.auth_token = json.loads(self.login_response.data)['auth_token']
 
