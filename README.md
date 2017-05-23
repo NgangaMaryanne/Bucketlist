@@ -1,6 +1,6 @@
 # Bucketlist API 
 [![Build Status](https://travis-ci.org/NgangaMaryanne/Bucketlist.svg?branch=develop)](https://travis-ci.org/NgangaMaryanne/Bucketlist)
-[![Coverage Status](https://coveralls.io/repos/github/NgangaMaryanne/Bucketlist/badge.svg)](https://coveralls.io/github/NgangaMaryanne/Bucketlist)
+[![Coverage Status](https://coveralls.io/repos/github/NgangaMaryanne/Bucketlist/badge.svg?branch=develop)](https://coveralls.io/github/NgangaMaryanne/Bucketlist?branch=develop)
 ## Introduction
 This is an API that allows you acts as a resource for your Bucketlist application.
 
