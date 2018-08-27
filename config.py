@@ -12,7 +12,7 @@ class DevelopmentConfig(Config):
     '''
     DEBUG = True
     SQLALCHEMY_ECHO = True
-    SQLALCHEMY_DATABASE_URI= 'postgresql://localhost/bucket'
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'postgresql://localhost/bucket')
     SECRET_KEY = 'p9Bv<3Eid9%$i01'
 
 
