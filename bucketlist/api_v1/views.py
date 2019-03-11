@@ -1,8 +1,9 @@
+from functools import wraps
+import datetime
+
 from flask import request, make_response, jsonify, g as global_user
 from flask_restful import Resource, Api, reqparse
 from sqlalchemy.exc import SQLAlchemyError
-from functools import wraps
-import datetime
 
 from .import apiv1
 from ..models import User, Bucketlist, Item
@@ -63,9 +64,10 @@ class BucketlistApi(Resource):
                 limit = 20
             if request.args.get('q'):
                 q = str(request.args.get('q'))
+                q = q.lower()
                 buckets = Bucketlist.query.filter(Bucketlist.name.like('%{}%'.format(q))).filter_by(
                     created_by=global_user.user).paginate(page_number, limit, False)
-                
+
             else:
                 buckets = Bucketlist.query.filter_by(
                     created_by=global_user.user).paginate(page_number, limit, False)
@@ -82,8 +84,8 @@ class BucketlistApi(Resource):
 
             results = bucketlist_schema.dump(buckets.items, many=True)
             if results.data:
-                response = jsonify({'previous page': previous_page,
-                                    'next page': next_page,
+                response = jsonify({'previousPage': previous_page,
+                                    'nextPage': next_page,
                                     'results': results})
                 response.status_code = 200
                 return make_response(response)
@@ -94,7 +96,8 @@ class BucketlistApi(Resource):
                         {'message': 'You do not have any bucketlists whose name contains {}.'.format(q)})
                     return make_response(response)
                 else:
-                    response = jsonify({'message': 'You do not have any bucketlists.'})
+                    response = jsonify(
+                        {'message': 'You do not have any bucketlists.'})
                     return make_response(response)
 
     @authentication_required
@@ -103,10 +106,11 @@ class BucketlistApi(Resource):
         Implements the POST method of the API endpoint takes in a bucketlist name as an argument.
         '''
         parser = reqparse.RequestParser()
-        parser.add_argument('name', 'Please input bucketlist name.')
-        new_bucketlist = parser.parse_args(strict=True)
+        parser.add_argument('name', required=True, help='Please input bucketlist name.')
+        new_bucketlist = parser.parse_args()
+        bucket_name = new_bucketlist['name'].lower()
         bucket = Bucketlist.query.filter_by(
-            name=new_bucketlist['name']).first()
+            name=bucket_name).first()
         bucket = bucketlist_schema.dump(bucket)
         if bucket.data:
             response = jsonify({'status': 'fail',
@@ -117,7 +121,7 @@ class BucketlistApi(Resource):
         else:
             try:
                 new_bucket = Bucketlist(
-                    name=new_bucketlist['name'], created_by=int(global_user.user))
+                    name=bucket_name, created_by=int(global_user.user))
                 db.session.add(new_bucket)
                 db.session.commit()
                 response = {'status': 'success',
@@ -139,34 +143,41 @@ class BucketlistApi(Resource):
         Updates a bucketlist takes in the new bucketlist name as argument
         '''
         parser = reqparse.RequestParser()
-        parser.add_argument('name', type=str, help="Please input new bucketlist name.")
+        parser.add_argument(
+            'name', type=str, help="Please input new bucketlist name.")
         updated_bucket = parser.parse_args(strict=True)
         bucket = Bucketlist.query.filter_by(
             id=bucket_id, created_by=int(global_user.user)).first()
         if bucket and updated_bucket:
             try:
-                bucket.name = updated_bucket['name']
+                bucket.name = updated_bucket['name'].lower()
                 bucket.date_modified = datetime.datetime.utcnow()
                 db.session.add(bucket)
                 db.session.commit()
-                response = {'status': 'success',
-                            'message': 'Bucketlist updated.'}
-                return make_response(jsonify(response))
+                response = jsonify({'status': 'success',
+                            'message': 'Bucketlist updated.'})
+                response.status_code = 204
+
+                return make_response(response)
             except(Exception):
-                response = {'status': 'fail',
+                response = jsonify({'status': 'fail',
                             'message': 'Please try again',
-                            'error': str(Exception)}
-                return make_response(jsonify(response))
+                            'error': str(Exception)})
+                response.status_code = 400
+                return make_response(response)
             except(SQLAlchemyError):
                 db.session.rollback()
-                response = {'status': 'fail',
-                            'message': str(SQLAlchemyError)}
-                return make_response(jsonify(response))
+                response = jsonify({'status': 'fail',
+                            'message': str(SQLAlchemyError)})
+                response.status_code = 400
+                return make_response(response)
 
         else:
-            response = {
-                'message': 'You do not have a bucket with id {0}'.format(bucket_id)}
-            return make_response(jsonify(response))
+            response = jsonify({
+                'message': 'You do not have a bucket with id {0}'.format(bucket_id)})
+
+            response.status_code = 400
+            return make_response(response)
 
     @authentication_required
     def delete(self, bucket_id):
@@ -210,11 +221,12 @@ class BucketlistItems(Resource):
         parser = reqparse.RequestParser()
         parser.add_argument('name', help='Please input item name.')
         new_item = parser.parse_args()
+        item_name = new_item['name'].lower()
         item_query = Item.query.filter_by(
-            bucketlist_id=bucket_id, name=new_item['name']).first()
+            bucketlist_id=bucket_id, name=item_name).first()
         if not item_query:
             try:
-                item = Item(name=new_item['name'], bucketlist_id=bucket_id)
+                item = Item(name=item_name, bucketlist_id=bucket_id)
                 db.session.add(item)
                 db.session.commit()
                 response = {'status': 'success',
@@ -253,7 +265,7 @@ class BucketlistItems(Resource):
             if item_query:
                 try:
                     if updated_item['name']:
-                        item_query.name = updated_item['name']
+                        item_query.name = updated_item['name'].lower()
                     if updated_item['done'] and updated_item['done'].lower() in ["false", "true"]:
                         if updated_item['done'].lower() == "true":
                             item_query.done = True

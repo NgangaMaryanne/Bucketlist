@@ -3,7 +3,7 @@ import os
 basedir = os.path.abspath(os.path.dirname(__file__))
 class Config(object):
     # For configuration that is common across all stages.
-    SECRET_KEY='JKHDJFAHUIB483475890395#@#$JDFHHA'
+    SECRET_KEY=os.getenv('SECRET_KEY')
 
 
 class DevelopmentConfig(Config):
@@ -29,6 +29,7 @@ class TestingConfig(Config):
     TESTING = True
     SQLALCHEMY_ECHO = True
     SQLALCHEMY_DATABASE_URI= 'sqlite:////'+basedir+'/test.db'
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 
 

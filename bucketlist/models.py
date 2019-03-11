@@ -62,7 +62,7 @@ class User(UserMixin, db.Model):
     def encode_auth_token(self, user_id):
         try:
             payload = {
-                'exp': datetime.datetime.utcnow()+datetime.timedelta(minutes=10),
+                'exp': datetime.datetime.utcnow()+datetime.timedelta(minutes=60),
                 'iat': datetime.datetime.utcnow(),
                 'sub': user_id
             }
