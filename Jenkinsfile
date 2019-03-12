@@ -3,13 +3,9 @@ pipeline {
     stages {
         stage('build') {
             steps {
-                script {
-                    def scannerHome = tool 'MaryanScanner';
-                    withSonarQubeEnv('MaryanSonar') {
-                        sh "${scannerHome}/bin/sonar-scanner"
-                    }
-                    echo "this try"
-                }       
+                withSonarQubeEnv('MaryanSonar') {
+                    sh "/opt/sonar-scanner/bin/sonar-scanner"
+                }      
             }
         }
     }
