@@ -8,6 +8,7 @@ pipeline {
                 sh "${scannerHome}/bin/sonar-scanner"
             }
             steps {
+                echo "this try"
                 sh './build.sh'
             }
         }
