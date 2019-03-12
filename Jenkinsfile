@@ -3,7 +3,7 @@ pipeline {
     stages {
         stage('build') {
             steps {
-                def scannerHome = tool 'MaryanScanner';
+                
                 echo "${scannerHome}"
             }
         }
