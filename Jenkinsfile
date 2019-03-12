@@ -3,7 +3,7 @@ pipeline {
     stages {
         stage('build') {
             environment {
-                scannerHome = tool 'MaryanSonar';
+                scannerHome = tool 'MaryanSonar'
             }
             steps {
                 withSonarQubeEnv('sonarqube') {
