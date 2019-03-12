@@ -6,7 +6,7 @@ pipeline {
                 scannerHome = tool 'MaryanSonar'
             }
             steps {
-                withSonarQubeEnv('sonarqube') {
+                withSonarQubeEnv('MaryanSonar') {
                     sh "${scannerHome}/bin/sonar-scanner"
                 }
                 echo "this try"
