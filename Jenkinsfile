@@ -1,4 +1,3 @@
-Jenkinsfile (Declarative Pipeline)
 pipeline {
     agent { docker { image 'python:3.5.1' } }
     stages {
@@ -8,6 +7,7 @@ pipeline {
                 sh "${scannerHome}/bin/sonar-scanner"
             }
             steps {
+                echo "this try"
                 sh './build.sh'
             }
         }
