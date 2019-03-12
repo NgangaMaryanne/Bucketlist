@@ -3,10 +3,10 @@ pipeline {
     stages {
         stage('build') {
             environment {
-                scannerHome = tool 'MaryanSonar'
+                scannerHome = tool 'SonarQube Scanner for Jenkins 2.8.1'
             }
             steps {
-                withSonarQubeEnv('sonarqube') {
+                withSonarQubeEnv('MaryanSonar') {
                     sh "${scannerHome}/bin/sonar-scanner"
                 }
                 echo "this try"
