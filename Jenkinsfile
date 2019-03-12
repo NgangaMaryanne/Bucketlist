@@ -1,15 +1,15 @@
 pipeline {
     agent { docker { image 'python:3.5.1' } }
     stages {
-        stage('sonarqube') {
-            environment {
-                scannerHome = tool 'MaryanScanner'
-            }
+        stage('build') {
             steps {
-                withSonarQubeEnv('sonarqube') {
-                    sh "${scannerHome}/bin/sonar-scanner"
-                } 
-                echo "${scannerHome}"
+                script {
+                    def scannerHome = tool 'MaryanScanner';
+                    withSonarQubeEnv('MaryanSonar') {
+                        sh "${scannerHome}/bin/sonar-scanner"
+                    }
+                    echo "this try"
+                }       
             }
         }
     }
