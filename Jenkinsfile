@@ -4,7 +4,7 @@ pipeline {
         stage('build') {
             environment {
                 SONARQUBE_SERVER = MaryanSonar
-                systemProp.sonar.host.url = 'http://10.0.15.17:9000'
+                "systemProp.sonar.host.url" = 'http://10.0.15.17:9000'
             }
             steps {
                 script {
