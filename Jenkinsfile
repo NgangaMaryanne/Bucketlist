@@ -3,10 +3,12 @@ pipeline {
     stages {
         stage('build') {
             steps {
-                def sonnarHome = tool ('MaryanScanner');
-                withSonarQubeEnv('MaryanSonar') {
-                    sh "${sonnarHome}/bin/sonar-scanner"
-                }      
+                script {
+                    def sonnarHome = tool ('MaryanScanner');
+                    withSonarQubeEnv('MaryanSonar') {
+                        sh "${sonnarHome}/bin/sonar-scanner"
+                    } 
+                }     
             }
         }
     }
