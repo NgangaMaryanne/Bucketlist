@@ -3,5 +3,4 @@ sonarqube:
 	@"${scannerHome}/bin/sonar-scanner"
 smile:
 	@echo hello world
-all:
-	smile sonarqube
+all: smile sonarqube
