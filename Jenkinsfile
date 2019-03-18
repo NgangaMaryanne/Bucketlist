@@ -8,7 +8,7 @@ pipeline {
             }
             steps {
                 withSonarQubeEnv(SONARQUBE_SERVER) {
-                  sh "${scannerHome}/bin/sonar-scanner"
+                  sh "make all"
                 }
             }
         }
