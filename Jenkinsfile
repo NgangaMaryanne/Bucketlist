@@ -8,7 +8,9 @@ pipeline {
                 SONAR_HOST_URL = 'http://10.0.15.17:9000'
             }
             steps {
-                sh "make all"
+                withSonarQubeEnv(SONARQUBE_SERVER) {
+                    sh "make all"
+                }
             }
         }
     }
