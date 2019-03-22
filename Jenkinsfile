@@ -3,7 +3,7 @@ pipeline {
     stages {
         stage('build') {
             environment {
-                SONARQUBE_SERVER = 'MaryanSonar'
+                SONARQUBE_SERVER = 'Maryan Sonar'
                 scannerHome = '/opt/jenkins/sonar-scanner'
             }
             steps {
